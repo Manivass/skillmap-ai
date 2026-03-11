@@ -4,6 +4,9 @@ const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const userRouter = express.Router();
+const { OAuth2Client } = require("google-auth-library");
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 userRouter.post("/signup", async (req, res) => {
   try {
@@ -18,9 +21,7 @@ userRouter.post("/signup", async (req, res) => {
     });
     await newUser.save();
 
-    const token = jwt.sign({ emailId }, process.env.JWT_SECRET_KEY, {
-      expiresIn: "1d",
-    });
+    const token = await newUser.getJWT();
 
     res.cookie("token", token, {
       expires: new Date(Date.now() + 60 * 60 * 1000 * 36),
@@ -34,6 +35,41 @@ userRouter.post("/signup", async (req, res) => {
         emailId,
       },
     });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+userRouter.post("/google-login", async (req, res) => {
+  try {
+    const { token } = req.body;
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const user = ticket.getPayload();
+    const email = user.email;
+    const firstName = user.given_name;
+    const lastName = user.family_name;
+
+    let isUserAvailable = await User.findOne({ emailId: email });
+    if (!isUserAvailable) {
+      isUserAvailable = new User({
+        firstName,
+        lastName,
+        emailId: email,
+      });
+      await isUserAvailable.save();
+    }
+    const jwtToken = await isUserAvailable.getJWT();
+
+    res.cookie("token", jwtToken, {
+      httpOnly: true,
+      expires: new Date(Date.now() + 60 * 60 * 1000 * 24),
+    });
+
+    res.status(200).json({ success: true, message: "Successfully logged In" });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
