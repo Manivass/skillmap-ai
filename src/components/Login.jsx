@@ -2,23 +2,27 @@ import React, { useState, useEffect } from "react";
 import Loginlogo from "../img/Loginlogo.png";
 import { FaGoogle } from "react-icons/fa";
 import axios from "axios";
+import { BASE_URL } from "../utils/constant";
 const Login = () => {
-  const [isLogin, setLogin] = useState(false);
+  const [isLogin, setLogin] = useState(true);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPasssword] = useState("");
+  const [iserr, setErr] = useState("");
 
-  const handleLogin = async (response) => {
-    console.log("Google Token:", response.credential);
-
-    const res = await axios.post(
-      "http://localhost:7777/google-login",
-      { token: response.credential },
-      { withCredentials: true },
-    );
-
-    console.log("Backend response:", res.data);
+  const handleGoogleLogin = async (response) => {
+    try {
+      console.log("Google Token:", response.credential);
+      const res = await axios.post(
+        BASE_URL + "/google-login",
+        { token: response.credential, provider: "google" },
+        { withCredentials: true },
+      );
+      console.log("Backend response:", res.data);
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   useEffect(() => {
@@ -26,7 +30,7 @@ const Login = () => {
       window.google.accounts.id.initialize({
         client_id:
           "309200387998-4irl0kdpdb895getlg8d0j5h6um54699.apps.googleusercontent.com",
-        callback: handleLogin,
+        callback: handleGoogleLogin,
       });
 
       window.google.accounts.id.renderButton(
@@ -35,11 +39,40 @@ const Login = () => {
       );
     }
   }, []);
+
+  const handleLogin = async () => {
+    try {
+      await axios.post(
+        BASE_URL + "/login",
+        {
+          emailId: email,
+          password,
+        },
+        {
+          withCredentials: true,
+        },
+      );
+    } catch (err) {
+      setErr(err?.message);
+    }
+  };
+  const handleSignUp = async () => {
+    try {
+      await axios.post(BASE_URL + "/signup", {
+        firstName,
+        lastName,
+        emailId: email,
+        password,
+      });
+    } catch (err) {
+      setErr(err?.response?.data?.message);
+    }
+  };
   return (
     <div className="hero bg-sky-100 min-h-screen shadow-md">
       <div className="hero-content  bg-white flex-col lg:flex-row rounded-md">
         <div className=" text-center w-1/2 ">
-          <img src={Loginlogo} className="w-140 h-138" />
+          <img src={Loginlogo} className="w-140 h-138 rounded-lg" />
         </div>
         <div className="card   w-full max-w-sm shrink-0 ">
           <div className="card-body">
@@ -54,7 +87,7 @@ const Login = () => {
                 <div>
                   <label className="label ">Firstname</label>
                   <input
-                    type="email"
+                    type="name"
                     className="input bg-base-100 mt-1"
                     placeholder="Firstname"
                     value={firstName}
@@ -66,7 +99,7 @@ const Login = () => {
                 <div>
                   <label className="label ">LastName</label>
                   <input
-                    type="email"
+                    type="name"
                     className="input bg-base-100 mt-1"
                     placeholder="LastName"
                     value={lastName}
@@ -91,7 +124,11 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPasssword(e.target.value)}
               />
-              <button className="btn btn-success mt-4 text-white">
+              <p className="text-sm text-red-500">{iserr}</p>
+              <button
+                onClick={isLogin ? handleLogin : handleSignUp}
+                className="btn btn-success mt-4 text-white w-22/23"
+              >
                 {isLogin ? "Login" : "sign In "}
               </button>
               <label
@@ -99,13 +136,13 @@ const Login = () => {
                 onClick={() => setLogin(!isLogin)}
               >
                 {isLogin
-                  ? "didn't have account ? signin "
+                  ? "didn't have account ? sign in "
                   : "already have Account ? Login"}
               </label>
 
               <h2 className="text-lg text-center text-base-300">OR</h2>
 
-              <div id="googleBtn"></div>
+              <div id="googleBtn" className="w-22/23"></div>
             </fieldset>
           </div>
         </div>
