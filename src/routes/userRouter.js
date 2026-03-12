@@ -42,7 +42,7 @@ userRouter.post("/signup", async (req, res) => {
 
 userRouter.post("/google-login", async (req, res) => {
   try {
-    const { token } = req.body;
+    const { token, provider } = req.body;
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,
@@ -59,6 +59,7 @@ userRouter.post("/google-login", async (req, res) => {
         firstName,
         lastName,
         emailId: email,
+        provider,
       });
       await isUserAvailable.save();
     }
@@ -70,6 +71,33 @@ userRouter.post("/google-login", async (req, res) => {
     });
 
     res.status(200).json({ success: true, message: "Successfully logged In" });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+userRouter.post("/login", async (req, res) => {
+  try {
+    const { emailId, password } = req.body;
+    const isUserAvailable = await User.findOne({ emailId });
+    if (!isUserAvailable) {
+      return res
+        .status(403)
+        .json({ success: false, message: "invalid credentials" });
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      isUserAvailable.password,
+    );
+
+    if (!isPasswordCorrect) {
+      return res
+        .status(403)
+        .json({ success: false, message: "invalid credentials" });
+    }
+
+    res.status(200).json({ status: true, message: "successfully logged in" });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }

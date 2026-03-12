@@ -1,4 +1,5 @@
 
 - added User Schema
 - added signup api
-- added google OAuth api
+- added google login 
+- added login api
