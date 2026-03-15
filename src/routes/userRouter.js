@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const userRouter = express.Router();
 const { OAuth2Client } = require("google-auth-library");
+const userAuth = require("../middleware/userAuth");
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -96,6 +97,12 @@ userRouter.post("/login", async (req, res) => {
         .status(403)
         .json({ success: false, message: "invalid credentials" });
     }
+
+    const token = await isUserAvailable.getJWT();
+
+    res.cookie("token", token, {
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
 
     res.status(200).json({ status: true, message: "successfully logged in" });
   } catch (err) {
