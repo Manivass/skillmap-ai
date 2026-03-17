@@ -1,5 +1,8 @@
 const express = require("express");
-const { validateAndSanitizeLoginData } = require("../validation/validate");
+const {
+  validateAndSanitizeLoginData,
+  validateProfileSetup,
+} = require("../validation/validate");
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -107,6 +110,23 @@ userRouter.post("/login", async (req, res) => {
     res.status(200).json({ status: true, message: "successfully logged in" });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+userRouter.patch("/profile-setup", userAuth, async (req, res) => {
+  try {
+    const loggedUser = req.user;
+    await validateProfileSetup(req);
+    const editProfile = Object.keys(req.body).forEach(
+      (keys) => (loggedUser[keys] = req.body[keys]),
+    );
+
+    await loggedUser.save();
+    res
+      .status(201)
+      .json({ success: true, message: "profile successfully edited" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

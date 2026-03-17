@@ -26,4 +26,54 @@ const validateAndSanitizeLoginData = async (req) => {
   }
 };
 
-module.exports = { validateAndSanitizeLoginData };
+const validateProfileSetup = async (req) => {
+  const {
+    userName,
+    profileURL,
+    contactEmail,
+    contactPhoneNo,
+    skills,
+    githubURL,
+    leetcodeURL,
+    instagramURL,
+  } = req.body;
+
+  if (userName) {
+    const userNameAlreadyAvailable = await User.findOne({ userName });
+    if (
+      userNameAlreadyAvailable &&
+      userNameAlreadyAvailable._id.toString() !== req.user._id.toString()
+    ) {
+      throw new Error("username is already exist.");
+    }
+  }
+  if (profileURL && !validator.isURL(profileURL)) {
+    throw new Error("profile URL is not valid");
+  }
+  if (contactPhoneNo && !validator.isMobilePhone(contactPhoneNo, "any")) {
+    throw new Error("mobile phone is not valid");
+  }
+  if (contactEmail && !validator.isEmail(contactEmail)) {
+    throw new Error("email is not valid");
+  }
+  if (githubURL && !validator.isURL(githubURL, { require_protocol: true })) {
+    throw new Error("github url is not valid");
+  }
+  if (
+    leetcodeURL &&
+    !validator.isURL(leetcodeURL, { require_protocol: true })
+  ) {
+    throw new Error("leetcode url is not valid");
+  }
+  if (
+    instagramURL &&
+    !validator.isURL(instagramURL, { require_protocol: true })
+  ) {
+    throw new Error("instagram url is not valid");
+  }
+  if (skills && skills.length > 10) {
+    throw new Error("only 10 skills are allowed");
+  }
+};
+
+module.exports = { validateAndSanitizeLoginData, validateProfileSetup };

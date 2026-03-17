@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       maxLength: 14,
       trim: true,
+      unique: true,
     },
     emailId: {
       type: String,
@@ -33,7 +34,6 @@ const userSchema = new mongoose.Schema(
         }
       },
     },
-
     password: {
       type: String,
     },
@@ -47,6 +47,19 @@ const userSchema = new mongoose.Schema(
     },
     profileURL: {
       type: String,
+      validate: function (value) {
+        if (!validator.isURL(value, { require_protocol: true })) {
+          throw new Error("profile URL is not valid");
+        }
+      },
+    },
+    Bio: {
+      type: String,
+      validate: function (value) {
+        if (value.length > 450) {
+          throw new Error("only 450 characters are allowed");
+        }
+      },
     },
     contactEmail: {
       type: String,
@@ -56,10 +69,20 @@ const userSchema = new mongoose.Schema(
         }
       },
     },
+    careerGoal: {
+      type: [String],
+      enum: {
+        values: ["fullstack" , "AI" , "devOps" , "cloud"],
+        message: `{VALUE} is not valid goal`,
+      },
+    },
     contactPhoneNo: {
-      type: Number,
-      min: 1000000000,
-      max: 9999999999,
+      type: String,
+      validate: function (value) {
+        if (!validator.isMobilePhone(value, "any")) {
+          throw new Error("phone number is not valid");
+        }
+      },
     },
     country: {
       type: String,
@@ -72,12 +95,12 @@ const userSchema = new mongoose.Schema(
     },
     skills: {
       type: [String],
-      maxLength: 10,
+      validate: [(arr) => arr.length <= 10, "only 10 skills are allowed"],
     },
     githubURL: {
       type: String,
       validate: function (value) {
-        if (!validator.isURL(value)) {
+        if (!validator.isURL(value, { require_protocol: true })) {
           throw new Error("github url is not valid");
         }
       },
@@ -85,7 +108,7 @@ const userSchema = new mongoose.Schema(
     leetcodeURL: {
       type: String,
       validate: function (value) {
-        if (!validator.isURL(value)) {
+        if (!validator.isURL(value, { require_protocol: true })) {
           throw new Error("leetcode url is not valid");
         }
       },
@@ -93,7 +116,7 @@ const userSchema = new mongoose.Schema(
     instagramURL: {
       type: String,
       validate: function (value) {
-        if (!validator.isURL(value)) {
+        if (!validator.isURL(value, { require_protocol: true })) {
           throw new Error("instagram url is not valid");
         }
       },
